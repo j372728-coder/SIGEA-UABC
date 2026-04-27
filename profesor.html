@@ -10,127 +10,51 @@
         :root {
             --verde-uabc: #004d40;
             --verde-claro: #00796b;
-            --blanco: #ffffff;
+            --rojo-uabc: #b71c1c;
             --gris-fondo: #f0f2f5;
         }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--gris-fondo); margin: 0; padding: 20px; }
+        .header { background: var(--verde-uabc); color: white; padding: 20px; text-align: center; border-radius: 15px; margin-bottom: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h3 { color: var(--verde-uabc); border-bottom: 2px solid var(--verde-claro); padding-bottom: 10px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { background: var(--verde-claro); color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
 
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: var(--gris-fondo);
-            margin: 0;
-            padding: 20px;
-        }
-
-        .header {
-            background: var(--verde-uabc);
-            color: white;
-            padding: 25px;
-            text-align: center;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: auto;
-        }
-
-        .card {
-            background: var(--blanco);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-
-        h3 {
-            color: var(--verde-uabc);
-            border-bottom: 2px solid var(--verde-claro);
-            padding-bottom: 10px;
-            margin-top: 0;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th {
-            background: var(--verde-claro);
-            color: white;
-            padding: 15px;
-            text-align: left;
-            font-size: 14px;
-        }
-
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            color: #333;
-            font-size: 15px;
-        }
-
-        .hora-tag {
-            background: #e0f2f1;
-            color: var(--verde-uabc);
-            padding: 6px 12px;
-            border-radius: 6px;
+        .hora-tag { background: #e0f2f1; color: var(--verde-uabc); padding: 5px 10px; border-radius: 5px; font-weight: bold; }
+        .btn-cancelar { 
+            background: white; 
+            color: var(--rojo-uabc); 
+            border: 1px solid var(--rojo-uabc); 
+            padding: 6px 12px; 
+            border-radius: 6px; 
+            cursor: pointer; 
             font-weight: bold;
-            display: inline-block;
+            font-size: 11px;
         }
-
-        .aula-tag {
-            background: #eceff1;
-            color: #455a64;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 13px;
-        }
-
-        .btn-logout {
-            background: #546e7a;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            float: right;
-            margin-top: 20px;
-            transition: 0.3s;
-        }
-
-        .btn-logout:hover {
-            background: #37474f;
-        }
-
-        .status-badge {
-            font-size: 12px;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-weight: bold;
-        }
+        .btn-cancelar:hover { background: var(--rojo-uabc); color: white; }
+        .btn-logout { background: #666; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; float: right; margin-top: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1 style="margin:0;">Panel Docente</h1>
-        <p style="opacity: 0.9;">Bienvenido, Prof. Angel Ramirez</p>
+        <h1>Panel de Control Docente</h1>
+        <p>Bienvenido, Prof. Angel Ramirez</p>
     </div>
 
     <div class="card">
-        <h3>Mis Clases Programadas</h3>
+        <h3>Gestión de Clases Programadas</h3>
         <table>
             <thead>
                 <tr>
                     <th>Horario</th>
                     <th>Materia</th>
                     <th>Carrera</th>
-                    <th>Ubicación</th>
+                    <th>Acción</th>
                 </tr>
             </thead>
             <tbody id="tablaProfesor">
@@ -138,7 +62,6 @@
         </table>
         
         <button class="btn-logout" onclick="window.location.href='index.html'">Cerrar Sesión</button>
-        <div style="clear:both;"></div>
     </div>
 </div>
 
@@ -147,45 +70,51 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Nombre del profesor logueado
     const nombreDocente = "Angel Ramirez";
+    // Ruta fija del prototipo para el ejemplo
+    const rutaAgenda = 'edificios/E1/piso2/201/agenda';
 
-    // Función para buscar en todos los salones del Edificio E1, Piso 2
-    function cargarAgendaDocente() {
-        // En un sistema real, buscaríamos en todos los edificios/pisos, 
-        // aquí buscamos en el nodo del prototipo (Piso 2, Aula 201)
-        db.ref('edificios/E1/piso2/201/agenda').on('value', (snap) => {
+    function cargarClases() {
+        db.ref(rutaAgenda).on('value', (snap) => {
             const tabla = document.getElementById('tablaProfesor');
             tabla.innerHTML = "";
 
             if (snap.exists()) {
-                let tieneClases = false;
                 snap.forEach(child => {
-                    const clase = child.val();
-                    
-                    // FILTRO: Solo mostrar las clases que pertenecen a este profesor
-                    if (clase.profesor === nombreDocente) {
-                        tieneClases = true;
+                    const c = child.val();
+                    // Solo mostramos las clases de este profesor
+                    if (c.profesor === nombreDocente) {
                         tabla.innerHTML += `
                             <tr>
-                                <td><span class="hora-tag">${clase.h_i}:${clase.m_i.toString().padStart(2,'0')} - ${clase.h_f}:${clase.m_f.toString().padStart(2,'0')}</span></td>
-                                <td><b>${clase.materia}</b></td>
-                                <td>${clase.carrera}</td>
-                                <td><span class="aula-tag">E1 - Aula 201</span></td>
+                                <td><span class="hora-tag">${c.h_i}:${c.m_i.toString().padStart(2,'0')} - ${c.h_f}:${c.m_f.toString().padStart(2,'0')}</span></td>
+                                <td><b>${c.materia}</b></td>
+                                <td>${c.carrera}</td>
+                                <td>
+                                    <button class="btn-cancelar" onclick="cancelarClase('${child.key}')">CANCELAR CLASE</button>
+                                </td>
                             </tr>`;
                     }
                 });
-
-                if (!tieneClases) {
-                    tabla.innerHTML = "<tr><td colspan='4' style='text-align:center; color:#999;'>No tiene clases asignadas para este salón.</td></tr>";
-                }
             } else {
-                tabla.innerHTML = "<tr><td colspan='4' style='text-align:center; color:#999;'>No hay agenda disponible en el sistema.</td></tr>";
+                tabla.innerHTML = "<tr><td colspan='4' style='text-align:center;'>No tiene clases asignadas hoy.</td></tr>";
             }
         });
     }
 
-    cargarAgendaDocente();
+    function cancelarClase(idClase) {
+        if (confirm("¿Está seguro de que desea cancelar esta clase? Se eliminará de la agenda.")) {
+            // Elimina solo el nodo de esa clase específica
+            db.ref(`${rutaAgenda}/${idClase}`).remove()
+            .then(() => {
+                alert("Clase cancelada exitosamente.");
+            })
+            .catch((error) => {
+                alert("Error al cancelar: " + error.message);
+            });
+        }
+    }
+
+    cargarClases();
 </script>
 
 </body>
