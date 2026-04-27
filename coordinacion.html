@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SIGEA - Coordinación Completa</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        :root { --verde-uabc: #004d40; --verde-claro: #00796b; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--verde-uabc); color: white; margin: 0; padding: 20px; }
+        .container { max-width: 550px; margin: auto; background: white; color: #333; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h2 { text-align: center; color: var(--verde-uabc); margin-top: 0; text-transform: uppercase; font-size: 22px; }
+        select, input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 14px; }
+        .btn-save { background: var(--verde-uabc); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 16px; }
+        .btn-save:hover { background: var(--verde-claro); }
+        .btn-sis { background: #1a237e; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; text-decoration: none; display: block; text-align: center; }
+        .row { display: flex; gap: 10px; margin-bottom: 5px; }
+        label { font-size: 11px; color: #666; font-weight: bold; text-transform: uppercase; margin-top: 10px; display: block; }
+        hr { border: 0; border-top: 2px solid #f0f2f5; margin: 20px 0; }
+        .section-title { color: var(--verde-claro); font-size: 14px; font-weight: bold; margin-bottom: 10px; border-left: 4px solid var(--verde-claro); padding-left: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Administración de Aulas</h2>
+        
+        <div class="section-title">UBICACIÓN DEL AULA</div>
+        <div class="row">
+            <div style="flex:1">
+                <label>Edificio</label>
+                <select id="edificio">
+                    <option value="E1">Edificio E1</option>
+                    <option value="E2">Edificio E2</option>
+                </select>
+            </div>
+            <div style="flex:1">
+                <label>Piso</label>
+                <select id="piso" onchange="actualizarSalones()">
+                    <option value="1">Piso 1</option>
+                    <option value="2" selected>Piso 2</option>
+                    <option value="3">Piso 3</option>
+                </select>
+            </div>
+            <div style="flex:1">
+                <label>Salón</label>
+                <select id="salon"></select>
+            </div>
+        </div>
+
+        <hr>
+        
+        <div class="section-title">DETALLES DE LA CLASE</div>
+
+        <label>Carrera</label>
+        <select id="carrera">
+            <option value="ELECTRONICA">ELECTRONICA</option>
+            <option value="COMPUTACION">COMPUTACION</option>
+            <option value="SOFTWARE">SOFTWARE</option>
+        </select>
+
+        <label>Docente Responsable</label>
+        <select id="profesor">
+            <option value="">Seleccione al docente...</option>
+            <option value="Angel Ramirez">Angel Ramirez</option>
+        </select>
+
+        <label>Materia</label>
+        <input type="text" id="materia" placeholder="Nombre de la asignatura">
+
+        <label>Horario (Inicio y Fin)</label>
+        <div class="row">
+            <input type="time" id="hi"> 
+            <input type="time" id="hf">
+        </div>
+
+        <button class="btn-save" onclick="agendar()">AGENDAR CLASE</button>
+        <a href="edificio_sis.html" class="btn-sis">IR A MONITOREO EDIFICIO_SIS</a>
+        <button onclick="window.location.href='index.html'" style="background:#666; margin-top:10px;" class="btn-save">CERRAR SESIÓN</button>
+    </div>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://sigea-uabc-37a9a-default-rtdb.firebaseio.com" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function actualizarSalones() {
+            const p = document.getElementById('piso').value;
+            const s = document.getElementById('salon');
+            s.innerHTML = "";
+            
+            // Generador de salones dinámico según el piso seleccionado
+            let inicio = p=="1"?101:(p=="2"?201:301);
+            let fin = p=="1"?105:(p=="2"?210:310);
+            
+            for(let i=inicio; i<=fin; i++){
+                let o=document.createElement('option'); 
+                o.value=i; 
+                o.text="Aula "+i; 
+                s.add(o);
+            }
+        }
+
+        function agendar() {
+            const ed = document.getElementById('edificio').value;
+            const sa = document.getElementById('salon').value;
+            const pi = document.getElementById('piso').value;
+            const profe = document.getElementById('profesor').value;
+            const mat = document.getElementById('materia').value;
+            const carr = document.getElementById('carrera').value;
+            const h_inicio = document.getElementById('hi').value;
+            const h_fin = document.getElementById('hf').value;
+
+            if(!profe || !mat || !h_inicio || !h_fin) {
+                alert("⚠ Por favor, complete todos los campos del formulario.");
+                return;
+            }
+
+            // Ruta dinámica en Firebase: edificios/E1/piso2/201/...
+            const rutaBase = `edificios/${ed}/piso${pi}/${sa}`;
+
+            db.ref(`${rutaBase}/last_seen`).once('value').then((snap) => {
+                // El 201 es nuestro prototipo físico
+                if (sa === "201" || snap.exists()) {
+                    const [hi_h, hi_m] = h_inicio.split(':');
+                    const [hf_h, hf_m] = h_fin.split(':');
+                    
+                    const data = {
+                        carrera: carr,
+                        materia: mat,
+                        profesor: profe,
+                        h_i: parseInt(hi_h), m_i: parseInt(hi_m),
+                        h_f: parseInt(hf_h), m_f: parseInt(hf_m)
+                    };
+                    
+                    // Guardar en el historial (agenda) y en la configuración actual
+                    db.ref(`${rutaBase}/agenda`).push(data);
+                    db.ref(`${rutaBase}/config`).set(data);
+                    
+                    alert("✅ Clase registrada con éxito en el " + ed + " - " + sa);
+                } else {
+                    alert("❌ ERROR: No se detectó hardware conectado en el Aula " + sa);
+                }
+            });
+        }
+
+        // Ejecutar al cargar para llenar el primer piso
+        actualizarSalones();
+    </script>
+</body>
+</html>

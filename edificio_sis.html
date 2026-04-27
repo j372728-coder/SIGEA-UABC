@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SIGEA - Monitor Edificio_SIS</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        :root {
+            --verde-uabc: #00796b;
+            --verde-oscuro: #004d40;
+            --blanco: #ffffff;
+            --rojo-delete: #c62828;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        h1 { color: var(--verde-oscuro); text-align: center; }
+        .grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; max-width: 1200px; margin: auto; }
+        .panel { background: var(--blanco); padding: 25px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+        .sensor-card { background: #fafafa; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; border: 1px solid #eee; }
+        .val { font-size: 28px; font-weight: bold; color: var(--verde-uabc); }
+        select { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: var(--verde-uabc); color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+
+        .btn-regresar { background: var(--verde-oscuro); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        
+        /* Botón de eliminar clase individual */
+        .btn-del-mini { 
+            background: #ffebee; 
+            color: var(--rojo-delete); 
+            border: 1px solid var(--rojo-delete); 
+            padding: 5px 10px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .btn-del-mini:hover { background: var(--rojo-delete); color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>Monitoreo Edificio_SIS</h1>
+
+    <div class="grid">
+        <div class="panel">
+            <h3>Ubicación</h3>
+            <select id="ed" onchange="actualizarSalones()">
+                <option value="E1">Edificio E1</option>
+                <option value="E2">Edificio E2</option>
+            </select>
+            <select id="pi" onchange="actualizarSalones()">
+                <option value="1">Piso 1</option>
+                <option value="2" selected>Piso 2</option>
+                <option value="3">Piso 3</option>
+            </select>
+            <select id="sa" onchange="conectar()"></select>
+            
+            <div class="sensor-card">
+                <div style="font-size: 11px; color: #666;">ILUMINACIÓN</div>
+                <div class="val"><span id="v-lux">0</span> lx</div>
+            </div>
+            <div class="sensor-card">
+                <div style="font-size: 11px; color: #666;">ESTADO AULA</div>
+                <div class="val" id="v-pre">---</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Agenda - Aula <span id="num-aula">---</span></h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Horario</th>
+                        <th>Materia</th>
+                        <th>Profesor</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="lista"></tbody>
+            </table>
+            <button class="btn-regresar" onclick="window.location.href='coordinacion.html'">REGRESAR</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://sigea-uabc-37a9a-default-rtdb.firebaseio.com" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        function actualizarSalones() {
+            const p = document.getElementById('pi').value;
+            const s = document.getElementById('sa'); 
+            s.innerHTML = "";
+            let i = p=="1"?101:(p=="2"?201:301);
+            let f = p=="1"?105:(p=="2"?210:310);
+            for(i; i<=f; i++){ 
+                let o=document.createElement('option'); o.value=i; o.text="Aula "+i; s.add(o); 
+            }
+            conectar();
+        }
+
+        function conectar() {
+            const ed = document.getElementById('ed').value;
+            const pi = document.getElementById('pi').value;
+            const sa = document.getElementById('sa').value;
+            document.getElementById('num-aula').innerText = sa;
+
+            const ruta = `edificios/${ed}/piso${pi}/${sa}`;
+
+            db.ref(ruta).on('value', (snap) => {
+                const d = snap.val(); if(!d) return;
+                document.getElementById('v-lux').innerText = d.lux ? d.lux.toFixed(1) : "0";
+                document.getElementById('v-pre').innerText = d.presencia ? "OCUPADO" : "LIBRE";
+            });
+
+            // ESCUCHAR AGENDA CON EL ID DE CADA CLASE
+            db.ref(`${ruta}/agenda`).on('value', (snap) => {
+                const l = document.getElementById('lista'); l.innerHTML = "";
+                if(snap.exists()){
+                    snap.forEach(child => {
+                        const cl = child.val();
+                        const idClase = child.key; // Este es el ID único que genera Firebase
+                        l.innerHTML += `
+                            <tr>
+                                <td>${cl.h_i}:${cl.m_i.toString().padStart(2,'0')}</td>
+                                <td>${cl.materia}</td>
+                                <td>${cl.profesor}</td>
+                                <td>
+                                    <button class="btn-del-mini" onclick="borrarClase('${idClase}')">ELIMINAR</button>
+                                </td>
+                            </tr>`;
+                    });
+                } else {
+                    l.innerHTML = "<tr><td colspan='4' style='text-align:center;'>Aula sin clases</td></tr>";
+                }
+            });
+        }
+
+        // FUNCIÓN PARA BORRAR UNA SOLA CLASE
+        function borrarClase(id) {
+            const ed = document.getElementById('ed').value;
+            const pi = document.getElementById('pi').value;
+            const sa = document.getElementById('sa').value;
+
+            if(confirm("¿Deseas eliminar esta clase de la agenda?")) {
+                // Borra solo el nodo específico dentro de agenda usando su ID
+                db.ref(`edificios/${ed}/piso${pi}/${sa}/agenda/${id}`).remove()
+                .then(() => {
+                    alert("Clase eliminada.");
+                });
+            }
+        }
+
+        actualizarSalones();
+    </script>
+</body>
+</html>

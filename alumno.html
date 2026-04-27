@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGEA Mobile - Alumnos</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 15px; }
+        .app-bar { background: #004d40; color: white; padding: 15px; border-radius: 0 0 20px 20px; margin: -15px -15px 20px -15px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .clase-card { background: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; border-left: 6px solid #00796b; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .time { font-size: 18px; font-weight: bold; color: #00796b; display: block; margin-bottom: 5px; }
+        .materia { font-size: 16px; font-weight: bold; color: #333; }
+        .info { font-size: 14px; color: #666; margin-top: 5px; }
+        .tag-aula { background: #e0f2f1; color: #004d40; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .logout-btn { display: block; width: 100%; padding: 12px; background: #eceff1; color: #607d8b; border: none; border-radius: 10px; margin-top: 20px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="app-bar">
+        <h2 style="margin:0; font-size: 20px;">Mi Horario</h2>
+        <small>Ing. Electrónica</small>
+    </div>
+
+    <div id="lista-clases">
+        <p style="text-align:center; color:#999;">Cargando clases...</p>
+    </div>
+
+    <button class="logout-btn" onclick="location.href='index.html'">CERRAR SESIÓN</button>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://sigea-uabc-37a9a-default-rtdb.firebaseio.com" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Escuchamos los cambios en el edificio E1 (donde está el prototipo)
+        db.ref('edificios/E1/piso2/201/agenda').on('value', (snap) => {
+            const container = document.getElementById('lista-clases');
+            container.innerHTML = "";
+
+            if (snap.exists()) {
+                snap.forEach(child => {
+                    const c = child.val();
+                    // FILTRO DE CARRERA OBLIGATORIO
+                    if (c.carrera === "ELECTRONICA") {
+                        container.innerHTML += `
+                            <div class="clase-card">
+                                <span class="time">⏰ ${c.h_i}:${c.m_i.toString().padStart(2,'0')} - ${c.h_f}:${c.m_f.toString().padStart(2,'0')}</span>
+                                <div class="materia">${c.materia.toUpperCase()}</div>
+                                <div class="info">👤 ${c.profesor}</div>
+                                <div class="info"><span class="tag-aula">AULA 201</span> • Edificio E1</div>
+                            </div>`;
+                    }
+                });
+            } else {
+                container.innerHTML = "<p style='text-align:center;'>No hay clases hoy.</p>";
+            }
+        });
+    </script>
+</body>
+</html>

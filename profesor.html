@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SIGEA - Profesor</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        body { font-family: 'Segoe UI'; background: #00796b; color: white; text-align: center; padding: 20px; }
+        .card { background: white; color: #333; border-radius: 20px; padding: 30px; max-width: 400px; margin: auto; }
+        h2 { color: #00796b; }
+        .btn-off { background: #d32f2f; color: white; padding: 20px; border: none; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; }
+        select { width: 100%; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Bienvenido, Prof. Angel Ramirez</h1>
+    <div class="card">
+        <h2>Mi Aula</h2>
+        <select id="pi" onchange="actualizar()"><option value="1">Piso 1</option><option value="2" selected>Piso 2</option><option value="3">Piso 3</option></select>
+        <select id="sa" onchange="ver()"></select>
+        <div style="background:#f4f4f4; padding:15px; margin:15px 0; border-radius:10px; text-align:left;">
+            <b>Clase:</b> <span id="m">---</span><br><b>Hora:</b> <span id="h">---</span>
+        </div>
+        <button class="btn-off" onclick="apagar()">TERMINAR CLASE TEMPRANO</button>
+        <button onclick="window.location.href='index.html'" style="margin-top:10px; border:none; background:none; cursor:pointer; color:#666;">Cerrar Sesión</button>
+    </div>
+    <script>
+        const firebaseConfig = { databaseURL: "https://sigea-uabc-37a9a-default-rtdb.firebaseio.com" };
+        firebase.initializeApp(firebaseConfig);
+        function actualizar() {
+            const p=document.getElementById('pi').value; const s=document.getElementById('sa'); s.innerHTML="";
+            let i=p=="1"?101:(p=="2"?201:301); let f=p=="1"?105:(p=="2"?210:310);
+            for(i;i<=f;i++){ let o=document.createElement('option'); o.value=i; o.text="Aula "+i; s.add(o); }
+            ver();
+        }
+        function ver() {
+            const sa=document.getElementById('sa').value; const pi=document.getElementById('pi').value;
+            firebase.database().ref(`edificios/E1/piso${pi}/${sa}/config`).on('value', s=>{
+                const d=s.val(); if(d){ document.getElementById('m').innerText=d.materia; document.getElementById('h').innerText=d.h_i+":"+d.m_i; }
+            });
+        }
+        function apagar() {
+            const sa=document.getElementById('sa').value; const pi=document.getElementById('pi').value;
+            firebase.database().ref(`edificios/E1/piso${pi}/${sa}/control/cancelado`).set(true);
+            alert("✓ Sistema en ahorro energético");
+        }
+        actualizar();
+    </script>
+</body>
+</html>

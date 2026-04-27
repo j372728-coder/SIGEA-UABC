@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGEA - Acceso al Sistema</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <style>
+        :root {
+            --verde-uabc: #004d40;
+            --verde-claro: #00796b;
+            --blanco: #ffffff;
+            --gris-fondo: #f0f2f5;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--gris-fondo);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-card {
+            background: var(--blanco);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 350px;
+            text-align: center;
+        }
+
+        .login-card h2 {
+            color: var(--verde-uabc);
+            margin-bottom: 25px;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        label {
+            display: block;
+            text-align: left;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--verde-claro);
+            box-shadow: 0 0 5px rgba(0,121,107,0.2);
+        }
+
+        button {
+            background: var(--verde-uabc);
+            color: white;
+            border: none;
+            padding: 15px;
+            width: 100%;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: var(--verde-claro);
+        }
+
+        #campoCarrera {
+            background: #e0f2f1;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px dashed var(--verde-claro);
+        }
+
+        .footer-logo {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <h2>Portal SIGEA</h2>
+        
+        <label>TIPO DE USUARIO</label>
+        <select id="rol" onchange="verificarRol()">
+            <option value="coordinadora">Coordinadora</option>
+            <option value="profesor">Profesor</option>
+            <option value="alumno">Alumno</option>
+        </select>
+
+        <div id="campoCarrera" style="display:none;">
+            <label>CARRERA</label>
+            <select id="carreraAlumno">
+                <option value="">-- Selecciona Carrera --</option>
+                <option value="ELECTRONICA">ELECTRONICA</option>
+                <option value="COMPUTACION">COMPUTACION</option>
+                <option value="SOFTWARE">SOFTWARE</option>
+            </select>
+        </div>
+
+        <label>USUARIO</label>
+        <input type="text" id="user" placeholder="Nombre de usuario" autocomplete="off">
+
+        <label>CONTRASEÑA</label>
+        <input type="password" id="pass" placeholder="••••••••">
+
+        <button onclick="iniciarSesion()">INICIAR SESIÓN</button>
+
+        <div class="footer-logo">Sistema de Gestión de Aulas</div>
+    </div>
+
+    <script>
+        // Función para mostrar/ocultar el selector de carrera
+        function verificarRol() {
+            const rol = document.getElementById('rol').value;
+            const divCarrera = document.getElementById('campoCarrera');
+            
+            if (rol === "alumno") {
+                divCarrera.style.display = "block";
+            } else {
+                divCarrera.style.display = "none";
+            }
+        }
+
+        // Lógica principal de Login
+        function iniciarSesion() {
+            const rol = document.getElementById('rol').value;
+            const user = document.getElementById('user').value.trim();
+            const pass = document.getElementById('pass').value.trim();
+            const carrera = document.getElementById('carreraAlumno').value;
+
+            // 1. VALIDACIÓN COORDINADORA
+            if (rol === "coordinadora" && user === "Rosa Martha" && pass === "12345") {
+                window.location.href = "coordinacion.html";
+            } 
+            
+            // 2. VALIDACIÓN PROFESOR
+            else if (rol === "profesor" && user === "Angel Ramirez" && pass === "12345") {
+                window.location.href = "profesor.html";
+            } 
+            
+            // 3. VALIDACIÓN ALUMNO (Con filtro de Carrera)
+            else if (rol === "alumno" && user === "Julian Ramirez" && pass === "12345") {
+                // Verificamos que sea de Electrónica
+                if (carrera === "ELECTRONICA") {
+                    window.location.href = "alumno.html";
+                } else {
+                    alert("Acceso denegado: Tu carrera seleccionada no coincide con tu registro.");
+                }
+            } 
+            
+            // 4. ERROR DE CREDENCIALES
+            else {
+                alert("Usuario o contraseña incorrectos. Por favor, verifique sus datos y el Rol seleccionado.");
+            }
+        }
+    </script>
+
+</body>
+</html>
