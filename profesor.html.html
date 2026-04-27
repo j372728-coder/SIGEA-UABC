@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGEA - Panel del Profesor</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        :root {
+            --verde-uabc: #004d40;
+            --verde-claro: #00796b;
+            --rojo-uabc: #b71c1c;
+            --gris-fondo: #f0f2f5;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--gris-fondo); margin: 0; padding: 20px; }
+        .header { background: var(--verde-uabc); color: white; padding: 20px; text-align: center; border-radius: 15px; margin-bottom: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h3 { color: var(--verde-uabc); border-bottom: 2px solid var(--verde-claro); padding-bottom: 10px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { background: var(--verde-claro); color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+
+        .hora-tag { background: #e0f2f1; color: var(--verde-uabc); padding: 5px 10px; border-radius: 5px; font-weight: bold; }
+        .btn-cancelar { 
+            background: white; 
+            color: var(--rojo-uabc); 
+            border: 1px solid var(--rojo-uabc); 
+            padding: 6px 12px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold;
+            font-size: 11px;
+        }
+        .btn-cancelar:hover { background: var(--rojo-uabc); color: white; }
+        .btn-logout { background: #666; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; float: right; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Panel de Control Docente</h1>
+        <p>Bienvenido, Prof. Angel Ramirez</p>
+    </div>
+
+    <div class="card">
+        <h3>Gestión de Clases Programadas</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Horario</th>
+                    <th>Materia</th>
+                    <th>Carrera</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="tablaProfesor">
+                </tbody>
+        </table>
+        
+        <button class="btn-logout" onclick="window.location.href='index.html'">Cerrar Sesión</button>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = { databaseURL: "https://sigea-uabc-37a9a-default-rtdb.firebaseio.com" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const nombreDocente = "Angel Ramirez";
+    // Ruta fija del prototipo para el ejemplo
+    const rutaAgenda = 'edificios/E1/piso2/201/agenda';
+
+    function cargarClases() {
+        db.ref(rutaAgenda).on('value', (snap) => {
+            const tabla = document.getElementById('tablaProfesor');
+            tabla.innerHTML = "";
+
+            if (snap.exists()) {
+                snap.forEach(child => {
+                    const c = child.val();
+                    // Solo mostramos las clases de este profesor
+                    if (c.profesor === nombreDocente) {
+                        tabla.innerHTML += `
+                            <tr>
+                                <td><span class="hora-tag">${c.h_i}:${c.m_i.toString().padStart(2,'0')} - ${c.h_f}:${c.m_f.toString().padStart(2,'0')}</span></td>
+                                <td><b>${c.materia}</b></td>
+                                <td>${c.carrera}</td>
+                                <td>
+                                    <button class="btn-cancelar" onclick="cancelarClase('${child.key}')">CANCELAR CLASE</button>
+                                </td>
+                            </tr>`;
+                    }
+                });
+            } else {
+                tabla.innerHTML = "<tr><td colspan='4' style='text-align:center;'>No tiene clases asignadas hoy.</td></tr>";
+            }
+        });
+    }
+
+    function cancelarClase(idClase) {
+        if (confirm("¿Está seguro de que desea cancelar esta clase? Se eliminará de la agenda.")) {
+            // Elimina solo el nodo de esa clase específica
+            db.ref(`${rutaAgenda}/${idClase}`).remove()
+            .then(() => {
+                alert("Clase cancelada exitosamente.");
+            })
+            .catch((error) => {
+                alert("Error al cancelar: " + error.message);
+            });
+        }
+    }
+
+    cargarClases();
+</script>
+
+</body>
+</html>
